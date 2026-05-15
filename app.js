@@ -873,7 +873,7 @@ function renderReports(root) {
     const txs = state.transactions.filter((t) => t.date.slice(0, 7) === m);
     const r = txs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const d = txs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    return { label: new Date(m + '-02').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }), receitas: r, despesas: d, saldo: r - d };
+    return { label: new Date(m + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }), receitas: r, despesas: d, saldo: r - d };
   });
 
   root.innerHTML = `
@@ -894,6 +894,31 @@ function renderReports(root) {
       </div>
     </div>
 
+    <div class="card section">
+      <h2 class="card-title" style="margin-bottom:16px">Exportar</h2>
+      <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end;">
+        <div class="field" style="width:auto; min-width:140px;">
+          <label class="label">Data inicial</label>
+          <input type="date" class="input" id="expStart">
+        </div>
+        <div class="field" style="width:auto; min-width:140px;">
+          <label class="label">Data final</label>
+          <input type="date" class="input" id="expEnd">
+        </div>
+        <button class="btn btn-outline" id="btnExpCSV" style="display:flex; align-items:center; gap:8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
+        <button class="btn" id="btnExpPDF" style="display:flex; align-items:center; gap:8px; background:var(--primary); color:var(--primary-fg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Exportar PDF
+        </button>
+      </div>
+      <p style="margin-top:12px; font-size:11.5px; color:var(--muted); line-height:1.5;">
+        CSV: deixe as datas em branco para exportar todos.<br>
+        PDF: exporta os lançamentos e resumo do período selecionado.
+      </p>
+    </div>
     <div class="grid grid-4 section">
       ${reportSummaryCard('Receitas', formatBRL(receitas), variation(receitas, prevReceitas), ICONS.arrowUp, 'income')}
       ${reportSummaryCard('Despesas', formatBRL(despesas), variation(despesas, prevDespesas), ICONS.arrowDown, 'expense', true)}
@@ -917,37 +942,124 @@ function renderReports(root) {
     </div>
   `;
 
+  
   document.getElementById('prevMonth').onclick = () => { reportMonth = shiftMonth(reportMonth, -1); render(); };
   document.getElementById('nextMonth').onclick = () => { reportMonth = shiftMonth(reportMonth, 1); render(); };
   document.getElementById('pickerToggle').onclick = (e) => { e.stopPropagation(); pickerOpen = !pickerOpen; if (pickerOpen) pickerYear = Number(reportMonth.slice(0, 4)); render(); };
   if (pickerOpen) bindCalendar();
 
-  setTimeout(() => {
-      if (expByCat.length && window.Chart) renderCatChart('expCatChart', expByCat);
-      if (incByCat.length && window.Chart) renderCatChart('incCatChart', incByCat);
+  
+  document.getElementById('btnExpCSV').onclick = () => {
+    const start = document.getElementById('expStart').value;
+    const end = document.getElementById('expEnd').value;
+    let txs = state.transactions;
+    if (start) txs = txs.filter(t => t.date >= start);
+    if (end) txs = txs.filter(t => t.date <= end);
 
-      if(document.getElementById('barChart') && window.Chart) {
-          currentCharts.push(new Chart(document.getElementById('barChart'), {
-            type: 'bar',
-            data: {
-              labels: monthly.map((m) => m.label),
-              datasets: [
-                { label: 'Receitas', data: monthly.map((m) => m.receitas), backgroundColor: '#2dd4bf', borderRadius: 6 },
-                { label: 'Despesas', data: monthly.map((m) => m.despesas), backgroundColor: '#f87171', borderRadius: 6 },
-              ],
-            },
-            options: chartOpts({ legend: true, currency: true }),
-          }));
-      }
+    let csv = 'Data,Descrição,Categoria,Tipo,Valor\n';
+    txs.forEach(t => {
+      const catName = getCat(t.categoryId)?.name || 'Outros';
+      const tipo = t.type === 'income' ? 'Receita' : 'Despesa';
+      
+      csv += `${fmtDate(t.date)},"${t.description}",${catName},${tipo},${t.amount}\n`;
+    });
+    
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `commitpay_relatorio_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+    toast('Relatório CSV exportado!', 'success');
+  };
 
-      if(document.getElementById('lineChart') && window.Chart) {
-          currentCharts.push(new Chart(document.getElementById('lineChart'), {
-            type: 'line',
-            data: { labels: monthly.map((m) => m.label), datasets: [{ label: 'Saldo', data: monthly.map((m) => m.saldo), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 4 }] },
-            options: chartOpts({ legend: false, currency: true }),
-          }));
-      }
-  }, 50);
+  
+  document.getElementById('btnExpPDF').onclick = () => {
+    const start = document.getElementById('expStart').value;
+    const end = document.getElementById('expEnd').value;
+    let txs = state.transactions;
+    if (start) txs = txs.filter(t => t.date >= start);
+    if (end) txs = txs.filter(t => t.date <= end);
+
+    const inc = txs.filter(t => t.type === 'income').reduce((a,b) => a+b.amount, 0);
+    const exp = txs.filter(t => t.type === 'expense').reduce((a,b) => a+b.amount, 0);
+    const saldo = inc - exp;
+
+    
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8">
+        <title>Relatório CommitPay</title>
+        <style>
+          body { font-family: sans-serif; color: #1f2937; padding: 30px; }
+          h1 { color: #0d9488; font-size: 24px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 5px; }
+          .subtitle { font-size: 13px; color: #6b7280; margin-top: 0; margin-bottom: 30px; }
+          .summary { display: flex; gap: 20px; margin-bottom: 30px; }
+          .summary div { padding: 15px; background: #f3f4f6; border-radius: 8px; flex: 1; }
+          .summary span { font-size: 18px; font-weight: bold; display: block; margin-top: 6px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 12px; text-align: left; }
+          th { background: #f9fafb; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+          .income { color: #10b981; }
+          .expense { color: #ef4444; }
+        </style>
+      </head>
+      <body>
+        <h1>Relatório de Transações - CommitPay</h1>
+        <p class="subtitle">Período: ${start ? fmtDate(start) : 'Início'} até ${end ? fmtDate(end) : 'Hoje'}</p>
+        <div class="summary">
+          <div>Entradas (Receitas) <span class="income">R$ ${inc.toFixed(2)}</span></div>
+          <div>Saídas (Despesas) <span class="expense">R$ ${exp.toFixed(2)}</span></div>
+          <div>Saldo do Período <span style="color: ${saldo >= 0 ? '#10b981' : '#ef4444'}">R$ ${saldo.toFixed(2)}</span></div>
+        </div>
+        <table>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead>
+          <tbody>
+            ${txs.length === 0 ? '<tr><td colspan="4" style="text-align:center;">Nenhuma transação encontrada neste período.</td></tr>' : 
+              txs.map(t => `
+              <tr>
+                <td>${fmtDate(t.date)}</td>
+                <td>${t.description}</td>
+                <td>${getCat(t.categoryId)?.name||'Outros'}</td>
+                <td class="${t.type}">${t.type==='income'?'+':'-'} R$ ${t.amount.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <script>
+          // Espera a página carregar e chama a caixa de impressão para gerar o PDF
+          setTimeout(() => { window.print(); window.close(); }, 500);
+        </script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
+  };
+
+  
+  if (expByCat.length) renderCatChart('expCatChart', expByCat);
+  if (incByCat.length) renderCatChart('incCatChart', incByCat);
+
+  currentCharts.push(new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: monthly.map((m) => m.label),
+      datasets: [
+        { label: 'Receitas', data: monthly.map((m) => m.receitas), backgroundColor: '#2dd4bf', borderRadius: 6 },
+        { label: 'Despesas', data: monthly.map((m) => m.despesas), backgroundColor: '#f87171', borderRadius: 6 },
+      ],
+    },
+    options: chartOpts({ legend: true, currency: true }),
+  }));
+
+  currentCharts.push(new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: { labels: monthly.map((m) => m.label), datasets: [{ label: 'Saldo', data: monthly.map((m) => m.saldo), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', fill: true, tension: 0.35, borderWidth: 3, pointRadius: 4 }] },
+    options: chartOpts({ legend: false, currency: true }),
+  }));
 }
 
 function reportSummaryCard(label, value, variation, icon, tone, invert = false, sub = '') {
@@ -1083,37 +1195,6 @@ window.toggleTheme = function() {
     render(); // Redesenha os gráficos com as novas cores
 };
 
-// 2. EXPORTAÇÃO E IMPORTAÇÃO
-window.exportData = function() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
-    const a = document.createElement('a');
-    a.href = dataStr;
-    a.download = `commitpay_backup_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    toast('Backup exportado!', 'success');
-};
-
-window.importData = function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const imported = JSON.parse(e.target.result);
-            if (imported.transactions && imported.categories) {
-                state = imported;
-                persist();
-                toast('Dados importados! A reiniciar...', 'success');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                toast('Ficheiro inválido!', 'error');
-            }
-        } catch (err) {
-            toast('Erro ao ler backup.', 'error');
-        }
-    };
-    reader.readAsText(file);
-};
 
 // 3. REGISTO DO SERVICE WORKER (PWA)
 if ('serviceWorker' in navigator) {
