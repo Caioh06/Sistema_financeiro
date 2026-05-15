@@ -548,13 +548,13 @@ tbody tr:hover {
     border-left: 2px solid var(--primary);
 }
 
-/* =========================================
-   TEMA CLARO (LIGHT MODE)
-   ========================================= */
+/* =========================
+   TEMA CLARO (LIGHT MODE) 
+   =========================*/
 body.light-theme {
   --bg: #f3f4f6;
   --surface: #ffffff;
-  --surface-2: #f9fafb;
+  --surface-2: #f3f4f6;
   --border: #e5e7eb;
   --muted: #6b7280;
   --text: #1f2937;
@@ -562,7 +562,40 @@ body.light-theme {
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-body.light-theme .sidebar { border-right: 1px solid var(--border); }
-body.light-theme .topbar { border-bottom: 1px solid var(--border); }
-body.light-theme .card, body.light-theme .stat-card { border: 1px solid var(--border); }
-body.light-theme .chart-wrap canvas { filter: invert(1) hue-rotate(180deg); } 
+body.light-theme .brand-title,
+body.light-theme .brand-mobile span {
+  color: var(--text) !important;
+}
+
+body.light-theme .brand-subtitle {
+  color: var(--muted) !important;
+}
+
+body.light-theme .sidebar-tip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+body.light-theme .tip-title {
+  color: var(--text);
+}
+
+body.light-theme .tip-text {
+  color: var(--muted);
+}
+
+
+body.light-theme .sidebar,
+body.light-theme .topbar,
+body.light-theme .drawer-panel {
+  background: var(--surface) !important;
+  border-color: var(--border);
+}
+
+body.light-theme .topbar-title {
+  color: var(--text);
+}
+
+body.light-theme .topbar-date {
+  color: var(--muted);
+}
