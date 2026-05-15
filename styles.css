@@ -504,3 +504,65 @@ a { color: inherit; text-decoration: none; }
 [hidden] {
     display: none !important;
 }
+
+/* =========================================
+   EFEITOS VISUAIS E ANIMAÇÕES (HOVER)
+   ========================================= */
+
+.btn, .icon-btn, .nav-item, .card, .stat-card, .gb-card, .tx-card, tbody tr {
+    transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+    background-color: var(--surface-2);
+    transform: translateX(8px);
+    color: var(--primary);
+}
+
+.btn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--glow);
+    filter: brightness(1.1);
+}
+
+.icon-btn:hover {
+    background-color: var(--surface-2);
+    color: var(--primary);
+    transform: scale(1.15) rotate(3deg);
+}
+
+.card:hover, .stat-card:hover, .gb-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    border-color: rgba(45, 212, 191, 0.3);
+}
+
+tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+.tx-card:hover {
+    background-color: var(--surface-2);
+    transform: translateX(6px);
+    border-left: 2px solid var(--primary);
+}
+
+/* =========================================
+   TEMA CLARO (LIGHT MODE)
+   ========================================= */
+body.light-theme {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --border: #e5e7eb;
+  --muted: #6b7280;
+  --text: #1f2937;
+  --primary-fg: #ffffff;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .sidebar { border-right: 1px solid var(--border); }
+body.light-theme .topbar { border-bottom: 1px solid var(--border); }
+body.light-theme .card, body.light-theme .stat-card { border: 1px solid var(--border); }
+body.light-theme .chart-wrap canvas { filter: invert(1) hue-rotate(180deg); } 

@@ -8,6 +8,9 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='22'%3E%F0%9F%92%B5%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2dd4bf">
+    <link rel="apple-touch-icon" href="icon-192.png">
   </head>
   <body>
     <div id="app">
@@ -21,6 +24,14 @@
           </div>
         </div>
         <nav class="nav" id="nav"></nav>
+        <div class="sidebar-backup" style="padding: 0 16px; margin-top: 20px;">
+          <p style="font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase;">Dados</p>
+          <button class="btn btn-outline" style="width: 100%; margin-bottom: 8px;" onclick="exportData()">⬇️ Exportar Dados</button>
+          <label class="btn btn-ghost" style="width: 100%; cursor: pointer; text-align: center;">
+            ⬆️ Importar Dados
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+          </label>
+        </div>
         <div class="sidebar-tip">
           <p class="tip-title">💡 Dica do dia</p>
           <p class="tip-text">Reserve 20% das receitas para investir no seu futuro.</p>
@@ -37,8 +48,17 @@
             <span>CommitPay</span>
           </div>
           <div class="topbar-info">
-            <p class="topbar-date" id="topbarDate"></p>
-            <h2 class="topbar-title" id="topbarTitle">Dashboard</h2>
+            <header class="topbar">
+            <button class="icon-btn menu-toggle" id="menuBtn" aria-label="Abrir menu">
+            </button>
+            <div class="topbar-info" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <p class="topbar-date" id="topbarDate"></p>
+              <h2 class="topbar-title" id="topbarTitle">Dashboard</h2>
+            </div>
+            <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Mudar Tema" style="font-size: 20px;">☀️</button>
+            </div>
+            </header>
           </div>
         </header>
         <main class="content" id="view"></main>

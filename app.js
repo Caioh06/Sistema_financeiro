@@ -530,7 +530,20 @@ function renderTransactions(root) {
   }
   document.querySelectorAll('[data-del-tx]').forEach((b) => b.onclick = () => {
     const id = b.dataset.delTx;
-    state.transactions = state.transactions.filter((t) => t.id !== id); persist(); toast('Transação removida', 'success'); render();
+    const tx = state.transactions.find((t) => t.id === id); // Encontra qual foi a transação clicada
+    
+    // Chama o modal de confirmação antes de apagar
+    confirmDialog({ 
+      title: 'Excluir Transação?', 
+      desc: `Tem certeza que deseja excluir "<b>${escapeHtml(tx.description)}</b>" no valor de ${formatBRL(tx.amount)}?`, 
+      onOk: () => { 
+        // Se o usuário clicar em "Excluir", ele roda o código para apagar
+        state.transactions = state.transactions.filter((t) => t.id !== id); 
+        persist(); 
+        toast('Transação removida', 'success'); 
+        render(); 
+      } 
+    });
   });
 }
 
@@ -553,15 +566,23 @@ function renderTxModal() {
       </div>
       <div class="field"><label class="label">Valor (R$)</label><input class="input" id="txAmt" placeholder="0,00" inputmode="decimal" value="${escapeHtml(txModal.amount)}"/></div>
       <div class="field"><label class="label">Descrição</label><input class="input" id="txDesc" placeholder="Ex: Mercado da semana" maxlength="80" value="${escapeHtml(txModal.description)}"/></div>
+      
       <div class="field"><label class="label">Categoria</label>
         <select class="select" id="txCat">
           <option value="">Selecione</option>
           ${validCats.map((c) => `<option value="${c.id}"${txModal.categoryId === c.id ? ' selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
         </select>
       </div>
+
+      <div class="field" style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="txRecurring" style="width:auto; cursor:pointer;">
+        <label for="txRecurring" style="margin:0; font-size:14px; cursor:pointer;">Repetir por 12 meses (Fixa)</label>
+      </div>
+
       <div class="field"><label class="label">Data</label><input type="date" class="input" id="txDate" value="${txModal.date}"/></div>
+      
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
         <button type="submit" class="btn">Salvar</button>
       </div>
     </form>`;
@@ -581,8 +602,26 @@ function bindTxModal() {
     if (!amt || amt <= 0) return toast('Informe um valor válido', 'error');
     if (!desc) return toast('Informe uma descrição', 'error');
     if (!cat) return toast('Selecione uma categoria', 'error');
-    state.transactions.unshift({ id: uid(), type: txModal.type, amount: amt, description: desc, categoryId: cat, date: dt });
-    persist(); toast('Transação adicionada', 'success'); closeModal(); render();
+    const isRecurring = document.getElementById('txRecurring') && document.getElementById('txRecurring').checked;
+    
+    if (isRecurring) {
+        // Se for recorrente, cria 12 cópias lançando para os meses seguintes
+        for (let i = 0; i < 12; i++) {
+            let nextDate = new Date(dt + 'T12:00:00'); // Evita bugs de fuso horário
+            nextDate.setMonth(nextDate.getMonth() + i);
+            let nextDtStr = nextDate.toISOString().slice(0,10);
+            let descRec = i === 0 ? desc : `${desc} (${i+1}/12)`;
+            state.transactions.unshift({ id: uid(), type: txModal.type, amount: amt, description: descRec, categoryId: cat, date: nextDtStr });
+        }
+        toast('12 transações fixas adicionadas', 'success');
+    } else {
+        // Transação normal única
+        state.transactions.unshift({ id: uid(), type: txModal.type, amount: amt, description: desc, categoryId: cat, date: dt });
+        toast('Transação adicionada', 'success');
+    }
+    persist(); 
+    closeModal(); 
+    render();
   };
 }
 
@@ -1018,3 +1057,69 @@ const initialHash = location.hash.replace('#', '');
 if (initialHash && ROUTES.find((r) => r.id === initialHash)) currentRoute = initialHash;
 setTopbarDate();
 render();
+
+/* =========================================
+   NOVAS FUNCIONALIDADES: TEMA, BACKUP E PWA
+   ========================================= */
+
+// 1. TEMA CLARO/ESCURO
+let isLight = localStorage.getItem('commitpay:theme') === 'light';
+if (isLight) {
+    document.body.classList.add('light-theme');
+    document.getElementById('themeToggleBtn').innerText = '🌙';
+}
+
+window.toggleTheme = function() {
+    isLight = !isLight;
+    if (isLight) {
+        document.body.classList.add('light-theme');
+        localStorage.setItem('commitpay:theme', 'light');
+        document.getElementById('themeToggleBtn').innerText = '🌙';
+    } else {
+        document.body.classList.remove('light-theme');
+        localStorage.setItem('commitpay:theme', 'dark');
+        document.getElementById('themeToggleBtn').innerText = '☀️';
+    }
+    render(); // Redesenha os gráficos com as novas cores
+};
+
+// 2. EXPORTAÇÃO E IMPORTAÇÃO
+window.exportData = function() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = `commitpay_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    toast('Backup exportado!', 'success');
+};
+
+window.importData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.transactions && imported.categories) {
+                state = imported;
+                persist();
+                toast('Dados importados! A reiniciar...', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                toast('Ficheiro inválido!', 'error');
+            }
+        } catch (err) {
+            toast('Erro ao ler backup.', 'error');
+        }
+    };
+    reader.readAsText(file);
+};
+
+// 3. REGISTO DO SERVICE WORKER (PWA)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('PWA Service Worker registado!', reg);
+        }).catch(err => console.log('Erro no Service Worker:', err));
+    });
+}
