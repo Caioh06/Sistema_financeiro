@@ -548,54 +548,63 @@ tbody tr:hover {
     border-left: 2px solid var(--primary);
 }
 
-/* =========================
+/* ========================
    TEMA CLARO (LIGHT MODE) 
-   =========================*/
+   ========================*/
+
+
 body.light-theme {
   --bg: #f3f4f6;
   --surface: #ffffff;
-  --surface-2: #f3f4f6;
-  --border: #e5e7eb;
-  --muted: #6b7280;
-  --text: #1f2937;
+  --surface-2: #f8fafc;
+  --border: #e2e8f0;
+  --muted: #64748b;
+  --text: #0f172a;
   --primary-fg: #ffffff;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+body.light-theme .sidebar,
+body.light-theme .drawer-panel { 
+    background: var(--surface); 
+    border-right: 1px solid var(--border);
+}
+body.light-theme .topbar { 
+    background: rgba(255, 255, 255, 0.85); 
+    border-bottom: 1px solid var(--border);
 }
 
 body.light-theme .brand-title,
-body.light-theme .brand-mobile span {
-  color: var(--text) !important;
+body.light-theme .brand-mobile span,
+body.light-theme .topbar-title,
+body.light-theme .tip-title { 
+    color: var(--text) !important; 
+    font-weight: 700; 
+}
+body.light-theme .brand-subtitle,
+body.light-theme .topbar-date,
+body.light-theme .tip-text { 
+    color: var(--muted) !important; 
 }
 
-body.light-theme .brand-subtitle {
-  color: var(--muted) !important;
+body.light-theme .nav-item { color: var(--muted); }
+body.light-theme .nav-item:hover { color: var(--text); background: var(--surface-2); }
+body.light-theme .nav-item.active { color: var(--primary-fg); }
+
+body.light-theme .table thead { background: var(--surface-2); color: var(--text); }
+body.light-theme .table tr:hover td { background: var(--bg); }
+
+body.light-theme .menu,
+body.light-theme .calendar-pop,
+body.light-theme .modal-panel { 
+    background: var(--surface); 
+    border: 1px solid var(--border); 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+}
+body.light-theme .menu button:hover,
+body.light-theme .cal-head button:hover,
+body.light-theme .cal-grid button:hover:not(:disabled) { 
+    background: var(--bg); 
 }
 
-body.light-theme .sidebar-tip {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-}
-
-body.light-theme .tip-title {
-  color: var(--text);
-}
-
-body.light-theme .tip-text {
-  color: var(--muted);
-}
-
-
-body.light-theme .sidebar,
-body.light-theme .topbar,
-body.light-theme .drawer-panel {
-  background: var(--surface) !important;
-  border-color: var(--border);
-}
-
-body.light-theme .topbar-title {
-  color: var(--text);
-}
-
-body.light-theme .topbar-date {
-  color: var(--muted);
-}
+body.light-theme canvas { filter: invert(1) hue-rotate(180deg); }
