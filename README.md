@@ -11,3 +11,4 @@
 
 ### Planeamento Financeiro: Acompanhamento visual do progresso de metas de poupança e alertas de aproximação dos limites de gastos mensais.
 
+### Análise de Dados: Geração de relatórios visuais precisos para análise de despesas e evolução patrimonial ao longo dos meses.
